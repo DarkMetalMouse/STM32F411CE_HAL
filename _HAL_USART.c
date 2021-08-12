@@ -14,6 +14,30 @@ void USART1_IRQHandler(void)
 	}
 }
 
+void USART_Init(USART_Config *config) 
+{	
+	if (config->USARTx == USART1)
+		SET(RCC->APB2ENR,RCC_APB2ENR_USART1EN);
+	else
+		return;
+	if (config->mode & MODE_TX)
+		SET(config->USARTx->CR1,USART_CR1_TE);
+	if (config->mode & MODE_RX)
+		SET(config->USARTx->CR1,USART_CR1_RE);
+	
+	config->USARTx->BRR = SystemCoreClock / config->buad; 
+	// the caclulation is actually fCK/(buad*16)
+	// but since the mantissa-fractions is basicly the devider<<4 (4 bit fraction)
+	// you can ignore the 16 and just store fCK/buad
+	
+	SET(config->USARTx->CR1, USART_CR1_RXNEIE);
+	SET(config->USARTx->CR1, USART_CR1_UE);
+	if (config->USARTx == USART1)
+		NVIC_EnableIRQ(USART1_IRQn);
+	else
+		return;
+}
+
 void USART_WriteChar(USART_TypeDef *USARTx,char c)
 {
 	USARTx->DR = c;
